@@ -27,10 +27,7 @@ FUNCIONARIO criar_funcionario(const char *matricula, const char *nome, const cha
 
 void imprimir_funcionario(const FUNCIONARIO funcionario)
 {
-    printf("Matricula: %s\n", funcionario.matricula);
-    printf("Nome: %s\n", funcionario.nome);
-    printf("Funcao: %s\n", funcionario.funcao);
-    printf("Salario: %.2f\n", funcionario.salario);
+    printf("Matricula: %-6s | Nome: %-18s | Funcao: %-12s | Salario: %.2f\n", funcionario.matricula, funcionario.nome, funcionario.funcao, funcionario.salario);
 }
 
 void imprimir_vetor_funcionarios(const FUNCIONARIO *vetor, int tamanho)
@@ -39,9 +36,12 @@ void imprimir_vetor_funcionarios(const FUNCIONARIO *vetor, int tamanho)
     {
         if (vetor[i].matricula[0] != '\0') // Verifica se a matrícula não está vazia
         {
-            printf("Posicao %d:\n", i);
+            printf("Posicao %3d: ", i);
             imprimir_funcionario(vetor[i]);
-            printf("\n");
+        }
+        else
+        {
+            printf("Posicao %3d: Vazia\n", i); // Indica que a posição está vazia
         }
     }
 }

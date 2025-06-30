@@ -92,6 +92,12 @@ void fold_shift(const char *entrada, char *saida)
 
 int tratar_colisao(int resultado, int digito)
 {
+    // Verifica se o digito é 0, casos seja, soma ao menos 1 para evitar colisão infinita
+    if (digito == 0)
+    {
+        digito = 1; // Se o dígito for 0, substitui por 1 para evitar colisão infinita
+    }
+
     return resultado + digito; // Soma o dígito ao resultado
 }
 
@@ -121,7 +127,7 @@ int funcao_hash_A(const char *matricula, int tamanho)
     return resultado; // Retorna o resultado da função hash
 }
 
-short int inserir_funcionario_hash_A(FUNCIONARIO *vetor, int tamanho, FUNCIONARIO inserir)
+short int inserir_funcionario_hash_A(FUNCIONARIO *vetor, int tamanho, FUNCIONARIO inserir, int *colisoes)
 {
     short int retorno = 0; // Variavel para indicar sucesso ou falha na inserção
 
@@ -131,17 +137,46 @@ short int inserir_funcionario_hash_A(FUNCIONARIO *vetor, int tamanho, FUNCIONARI
     if (strcmp(vetor[resultado].matricula, inserir.matricula) != 0)
     {
 
-        short int valido = 1;               // Variável para verificar se a posição está livre
-        short int loop = 0;                 // Variável para controlar o loop
+        short int valido = 1; // Variável para verificar se o loop é válido
+        short int loop = 0;
+        short int loop_maximo = 0;          // Variável para controlar o loop
         int resultado_original = resultado; // Armazena o resultado original para verificar colisões
+
+        // Extrai o primeiro dígito da matrícula para tratar colisões
+        char digito = extrair_caractere(inserir.matricula, 1);
+        int primeiro_digito = atoi(&digito); // Extrai o primeiro dígito da matrícula
+
+        if (primeiro_digito == 0) // Se o primeiro dígito for 0, substitui por 1 para evitar colisão infinita
+        {
+            primeiro_digito = 1;
+        }
+
+        // Define o loop máximo com base no tamanho do vetor e no primeiro dígito
+        if (tamanho % primeiro_digito == 0) // Se o tamanho for divisível pelo primeiro dígito
+        {
+            // Se o digito for divisível pelo tamanho
+            loop_maximo = 2;
+        }
+        else if (((primeiro_digito % 2 == 0 && tamanho % 2 == 0) || (primeiro_digito % 2 != 0 && tamanho % 2 != 0)))
+        {
+            // Se o digito não for divisível pelo tamanho e ambos forem pares ou ímpares
+            loop_maximo = 3;
+        }
+        else
+        {
+            // Se o digito não for divisível pelo tamanho e ambos forem diferentes
+            loop_maximo = primeiro_digito;
+        }
 
         while (valido)
         {
-            if (resultado >= tamanho) // Verifica se o resultado é maior ou igual ao tamanho do vetor
+            //Faz loop ate o fim do vetor ou ate o a posição original ser atingida novamente
+            if (resultado >= tamanho || (resultado == resultado_original && loop + 1 >= loop_maximo)) // Verifica se o resultado é maior ou igual ao tamanho do vetor
             {
                 resultado = resto_divisao(resultado, tamanho); // Redefine o resultado para o resto da divisão pelo tamanho do vetor
+                loop++;                                        // Aumenta o contador de loops
 
-                if (loop == 1) // Se ja tiver feito um loop entra aqui
+                if (loop >= loop_maximo) // Se ja tiver feito um loop entra aqui
                 {
                     valido = 0;
 
@@ -149,8 +184,6 @@ short int inserir_funcionario_hash_A(FUNCIONARIO *vetor, int tamanho, FUNCIONARI
                     vetor[resultado_original] = inserir; // Insere o funcionário na posição original
                     retorno = 2;                         // Retorno 2 indica que não havia posições livres e foi inserido na posição original
                 }
-
-                loop = 1; // Define que já foi feita uma iteração
             }
             else
             {
@@ -167,12 +200,21 @@ short int inserir_funcionario_hash_A(FUNCIONARIO *vetor, int tamanho, FUNCIONARI
                 }
                 else
                 {
-                    char primeiro_digito = extrair_caractere(inserir.matricula, 1); // Extrai o primeiro dígito da matrícula
-                    resultado = tratar_colisao(resultado, atoi(&primeiro_digito));  // Trata colisão somando o primeiro dígito da matrícula
+                    if (colisoes != NULL) // Verifica se o ponteiro de colisões não é nulo
+                    {
+                        *colisoes = (*colisoes) + 1; // Incrementa o contador de colisões
+                    }
+
+                    resultado = tratar_colisao(resultado, primeiro_digito); // Trata colisão somando o primeiro dígito da matrícula
                 }
             }
         }
     }
+
+    // if (colisoes != NULL) // Verifica se o ponteiro de colisões não é nulo
+    // {
+    //    printf("Colisoes: %d\n", *colisoes); // Imprime o número de colisões
+    // }
 
     return retorno; // Retorna a posição onde o funcionário foi inserido
 }
@@ -183,8 +225,36 @@ FUNCIONARIO *buscar_funcionario_hash_A(FUNCIONARIO *vetor, int tamanho, const ch
 
     int resultado = funcao_hash_A(matricula, tamanho); // Calcula o resultado da função hash
 
-    short int nao_achado = 1;               // Variável para verificar se a posição está livre
-    short int loop = 0;                 // Variável para controlar o loop
+    short int nao_achado = 1; // Variável para verificar se o loop é válido
+    short int loop = 0;
+    short int loop_maximo = 0;          // Variável para controlar o loop
+    int resultado_original = resultado; // Armazena o resultado original para verificar colisões
+
+    // Extrai o primeiro dígito da matrícula para tratar colisões
+    char digito = extrair_caractere(matricula, 1);
+    int primeiro_digito = atoi(&digito); // Extrai o primeiro dígito da matrícula
+
+    if (primeiro_digito == 0) // Se o primeiro dígito for 0, substitui por 1 para evitar colisão infinita
+    {
+        primeiro_digito = 1;
+    }
+
+    // Define o loop máximo com base no tamanho do vetor e no primeiro dígito
+    if (tamanho % primeiro_digito == 0) // Se o tamanho for divisível pelo primeiro dígito
+    {
+        // Se o digito for divisível pelo tamanho
+        loop_maximo = 2;
+    }
+    else if (((primeiro_digito % 2 == 0 && tamanho % 2 == 0) || (primeiro_digito % 2 != 0 && tamanho % 2 != 0)))
+    {
+        // Se o digito não for divisível pelo tamanho e ambos forem pares ou ímpares
+        loop_maximo = 3;
+    }
+    else
+    {
+        // Se o digito não for divisível pelo tamanho e ambos forem diferentes
+        loop_maximo = primeiro_digito;
+    }
 
     while (nao_achado)
     {
@@ -192,25 +262,25 @@ FUNCIONARIO *buscar_funcionario_hash_A(FUNCIONARIO *vetor, int tamanho, const ch
         {
             resultado = resto_divisao(resultado, tamanho); // Redefine o resultado para o resto da divisão pelo tamanho do vetor
 
-            if (loop == 1) // Se ja tiver feito um loop entra aqui
+            loop++; // Aumenta o numero de loops feitos
+
+            if (loop >= loop_maximo) // Se ja tiver feito um loop entra aqui
             {
                 nao_achado = 0;
             }
-
-            loop = 1; // Define que já foi feita uma iteração
         }
         else
         {
             // Verifica se a matricula é igual
             if (strcmp(vetor[resultado].matricula, matricula) == 0)
             {
-                nao_achado = 0; // Define para sair do loop
+                nao_achado = 0;                  // Define para sair do loop
                 funcionario = &vetor[resultado]; // Atribui o endereço do funcionário encontrado
             }
             else
             {
-                char primeiro_digito = extrair_caractere(matricula, 1); // Extrai o primeiro dígito da matrícula
-                resultado = tratar_colisao(resultado, atoi(&primeiro_digito));  // Trata colisão somando o primeiro dígito da matrícula
+
+                resultado = tratar_colisao(resultado, primeiro_digito); // Trata colisão somando o primeiro dígito da matrícula
             }
         }
     }
@@ -237,7 +307,7 @@ int funcao_hash_B(const char *matricula, int tamanho)
     return resultado; // Retorna o resultado da função hash
 }
 
-short int inserir_funcionario_hash_B(FUNCIONARIO *vetor, int tamanho, FUNCIONARIO inserir)
+short int inserir_funcionario_hash_B(FUNCIONARIO *vetor, int tamanho, FUNCIONARIO inserir, int *colisoes)
 {
     short int retorno = 0; // Variavel para indicar sucesso ou falha na inserção
 
@@ -247,17 +317,52 @@ short int inserir_funcionario_hash_B(FUNCIONARIO *vetor, int tamanho, FUNCIONARI
     if (strcmp(vetor[resultado].matricula, inserir.matricula) != 0)
     {
 
-        short int valido = 1;               // Variável para verificar se a posição está livre
+        short int valido = 1;               // Variável para verificar se o loop é válido
         short int loop = 0;                 // Variável para controlar o loop
+        short int loop_maximo = 0;          // Variável para controlar o loop
+        short int ultimo_caso = 0; // Variável para controlar o último caso de colisão
         int resultado_original = resultado; // Armazena o resultado original para verificar colisões
+
+        // Extrai os dígitos da matrícula para tratar colisões
+        char digitos[3] = {0};                                // Array para armazenar os dígitos da matrícula
+        digitos[0] = extrair_caractere(inserir.matricula, 1); // Extrai o primeiro dígito da matrícula
+        digitos[1] = extrair_caractere(inserir.matricula, 6); // Extrai o segundo dígito da matrícula
+        digitos[2] = '\0';
+
+        // Verifica se os dígitos extraídos são válidos
+        int digito_tratamento = atoi(digitos); // Converte os dígitos extraídos para inteiro
+
+        if (digito_tratamento == 0) // Se o dígito for 0, substitui por 1 para evitar colisão infinita
+        {
+            digito_tratamento = 1;
+        }
+
+        // Define o loop máximo com base no tamanho do vetor e no dígito de tratamento
+        if (tamanho % digito_tratamento == 0) // Se o tamanho for divisível pelo primeiro dígito
+        {
+            // Se o digito for divisível pelo tamanho
+            loop_maximo = 2;
+        }
+        else if (((digito_tratamento % 2 == 0 && tamanho % 2 == 0) || (digito_tratamento % 2 != 0 && tamanho % 2 != 0)))
+        {
+            // Se o digito não for divisível pelo tamanho e ambos forem pares ou ímpares
+            loop_maximo = 3;
+        }
+        else
+        {
+            // Se o digito não for divisível pelo tamanho e ambos forem diferentes
+            loop_maximo = digito_tratamento;
+            
+        }
 
         while (valido)
         {
-            if (resultado >= tamanho) // Verifica se o resultado é maior ou igual ao tamanho do vetor
+            if (resultado >= tamanho || (resultado == resultado_original && loop + 1 >= loop_maximo)) // Verifica se o resultado é maior ou igual ao tamanho do vetor
             {
                 resultado = resto_divisao(resultado, tamanho); // Redefine o resultado para o resto da divisão pelo tamanho do vetor
 
-                if (loop == 1) // Se ja tiver feito um loop entra aqui
+                loop++;                  // Define que já foi feita uma iteração
+                if (loop >= loop_maximo) // Se ja tiver feito um loop entra aqui
                 {
                     valido = 0;
 
@@ -265,8 +370,6 @@ short int inserir_funcionario_hash_B(FUNCIONARIO *vetor, int tamanho, FUNCIONARI
                     vetor[resultado_original] = inserir; // Insere o funcionário na posição original
                     retorno = 2;                         // Retorno 2 indica que não havia posições livres e foi inserido na posição original
                 }
-
-                loop = 1; // Define que já foi feita uma iteração
             }
             else
             {
@@ -283,10 +386,10 @@ short int inserir_funcionario_hash_B(FUNCIONARIO *vetor, int tamanho, FUNCIONARI
                 }
                 else
                 {
-                    char digitos[3] = {0};                                // Array para armazenar os dígitos da matrícula
-                    digitos[0] = extrair_caractere(inserir.matricula, 1); // Extrai o primeiro dígito da matrícula
-                    digitos[1] = extrair_caractere(inserir.matricula, 6); // Extrai o segundo dígito da matrícula
-                    digitos[2] = '\0';                                    // Null terminator
+                    if (colisoes != NULL) // Verifica se o ponteiro de colisões não é nulo
+                    {
+                        *colisoes = (*colisoes) + 1; // Incrementa o contador de colisões
+                    }
 
                     resultado = tratar_colisao(resultado, atoi(digitos)); // Trata colisão somando o primeiro dígito da matrícula
                 }
@@ -303,38 +406,66 @@ FUNCIONARIO *buscar_funcionario_hash_B(FUNCIONARIO *vetor, int tamanho, const ch
 
     int resultado = funcao_hash_B(matricula, tamanho); // Calcula o resultado da função hash
 
-    short int nao_achado = 1;               // Variável para verificar se a posição está livre
-    short int loop = 0;                 // Variável para controlar o loop
+    short int nao_achado = 1;  // Variável para verificar se a posição está livre
+    short int loop = 0;        // Variável para controlar o loop
+    short int loop_maximo = 0; // Variável para controlar o loop
+    int resultado_original = resultado; // Armazena o resultado original para verificar colisões
+    
+    // Extrai os dígitos da matrícula para tratar colisões
+    char digitos[3] = {0};                                // Array para armazenar os dígitos da matrícula
+    digitos[0] = extrair_caractere(matricula, 1); // Extrai o primeiro dígito da matrícula
+    digitos[1] = extrair_caractere(matricula, 6); // Extrai o segundo dígito da matrícula
+    digitos[2] = '\0';
+
+    // Verifica se os dígitos extraídos são válidos
+    int digito_tratamento = atoi(digitos); // Converte os dígitos extraídos para inteiro
+
+    if (digito_tratamento == 0) // Se o dígito for 0, substitui por 1 para evitar colisão infinita
+    {
+        digito_tratamento = 1;
+    }
+
+    // Define o loop máximo com base no tamanho do vetor e no dígito de tratamento
+    if (tamanho % digito_tratamento == 0) // Se o tamanho for divisível pelo primeiro dígito
+    {
+        // Se o digito for divisível pelo tamanho
+        loop_maximo = 2;
+    }
+    else if (((digito_tratamento % 2 == 0 && tamanho % 2 == 0) || (digito_tratamento % 2 != 0 && tamanho % 2 != 0)))
+    {
+        // Se o digito não for divisível pelo tamanho e ambos forem pares ou ímpares
+        loop_maximo = 3;
+    }
+    else
+    {
+        // Se o digito não for divisível pelo tamanho e ambos forem diferentes
+        loop_maximo = digito_tratamento;
+    }
 
     while (nao_achado)
     {
-        if (resultado >= tamanho) // Verifica se o resultado é maior ou igual ao tamanho do vetor
+        if (resultado >= tamanho || (resultado == resultado_original && loop + 1 >= loop_maximo)) // Verifica se o resultado é maior ou igual ao tamanho do vetor
         {
             resultado = resto_divisao(resultado, tamanho); // Redefine o resultado para o resto da divisão pelo tamanho do vetor
+            loop++;                                        // Define que já foi feita uma iteração
 
-            if (loop == 1) // Se ja tiver feito um loop entra aqui
+            if (loop >= loop_maximo) // Se ja tiver feito um loop entra aqui
             {
-                nao_achado = 0;
+                nao_achado = 0; // Define que não foi encontrado
             }
-
-            loop = 1; // Define que já foi feita uma iteração
         }
         else
         {
             // Verifica se a matricula é igual
             if (strcmp(vetor[resultado].matricula, matricula) == 0)
             {
-                nao_achado = 0; // Define para sair do loop
+                nao_achado = 0;                  // Define para sair do loop
                 funcionario = &vetor[resultado]; // Atribui o endereço do funcionário encontrado
             }
             else
             {
-                char digitos[3] = {0};                                // Array para armazenar os dígitos da matrícula
-                digitos[0] = extrair_caractere(matricula, 1); // Extrai o primeiro dígito da matrícula
-                digitos[1] = extrair_caractere(matricula, 6); // Extrai o segundo dígito da matrícula
-                digitos[2] = '\0';                                    // Null terminator
 
-                resultado = tratar_colisao(resultado, atoi(digitos)); // Trata colisão somando o primeiro dígito da matrícula
+                resultado = tratar_colisao(resultado, digito_tratamento); // Trata colisão somando o primeiro dígito da matrícula
             }
         }
     }

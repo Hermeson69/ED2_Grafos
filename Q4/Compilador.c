@@ -4,7 +4,7 @@
 int main()
 {
 
-    int system_result = system("gcc -o Main ../Main.c ../Funcionario/Funcionario.c ../Hash/Hash.c  ../Utilitarios/Utilitarios.c ");
+    int system_result = system("gcc -o Main  ../Main.c ../Funcionario/Funcionario.c ../Hash/Hash.c ../BD/Coletar_dados.c ../Utilitarios/Utilitarios.c ");
 
     if (system_result == 0)
     {

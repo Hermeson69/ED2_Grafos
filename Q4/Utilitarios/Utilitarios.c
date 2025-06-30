@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "Utilitarios.h"
 
-
-
 void verificar_alocacao(void *ptr, const char *mensagem)
 {
     if (!ptr)
@@ -30,5 +28,14 @@ void limpar_tela()
     system("cls"); // Para Windows
 #else
     system("clear"); // Para Linux e MacOS
+#endif
+}
+
+void pausar_tela()
+{
+#ifdef _WIN32
+    system("pause"); // Para Windows
+#else
+    system("read -n 1 -s -p \"Pressione qualquer tecla para continuar...\""); // Para Linux e MacOS
 #endif
 }
